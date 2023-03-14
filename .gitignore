@@ -1,0 +1,10 @@
+
+.idea/
+
+snakemonkey/.env
+
+*.ipynb
+
+snakemonkey/__pycache__/
+
+snakemonkey/survey_data/

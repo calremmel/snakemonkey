@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from io import StringIO
+from unicodedata import normalize
 
 import requests
 
@@ -42,17 +43,18 @@ def strip_tags(text):
     return s.get_data()
 
 
+def clean_column(col):
+    new_col = normalize("NFKC", col)
+    new_col = " ".join(new_col.split())
+    return new_col
+
+
 @dataclass
 class Client:
     """Client for interacting with SurveyMonkey API."""
 
     token: str
     base_url: str = "https://api.surveymonkey.com/v3"
-
-    def __init__(self):
-        self.answers = None
-        self.questions = None
-        self.families = None
 
     def __post_init__(self):
         self.headers = {
@@ -300,9 +302,42 @@ class Client:
                         answers[question["answers"]["other"]["id"]] = question[
                             "answers"
                         ]["other"]["text"].strip()
-        self.families = families
-        self.questions = questions
-        self.answers = answers
+        self.families = {k: clean_column(v) for k, v in families.items()}
+        self.questions = {k: clean_column(v) for k, v in questions.items()}
+        self.answers = {k: clean_column(v) for k, v in answers.items()}
+
+    def get_all_column_names(self, survey_id):
+        columns = []
+        survey = self.get_survey_details(survey_id)
+        for page in survey["pages"]:
+            for question in page["questions"]:
+                if question.get("answers"):
+                    question_text = strip_tags(question["headings"][0]["heading"])
+                    if question["family"] == "single_choice":
+                        for choice in question["answers"]["choices"]:
+                            col = " - ".join([question_text, choice["text"]])
+                            columns.append(col)
+                    elif question["family"] == "multiple_choice":
+                        for key in question["answers"]:
+                            if key == "other":
+                                option = question["answers"][key]
+                                col = " - ".join([question_text, option["text"]])
+                                columns.append(col)
+                            else:
+                                for option in question["answers"][key]:
+                                    col = " - ".join([question_text, option["text"]])
+                                    columns.append(col)
+                    elif question["family"] == "matrix":
+                        for row in question["answers"]["rows"]:
+                            col = " - ".join([question_text, row["text"]])
+                            columns.append(col)
+                    else:
+                        for key in question["answers"].keys():
+                            for option in question["answers"][key]:
+                                col = " - ".join([question_text, option["text"]])
+                                columns.append(col)
+        self.all_columns = columns
+        return columns
 
     def print_survey_details(self, survey_id):
         survey = self.get_survey_details(survey_id)

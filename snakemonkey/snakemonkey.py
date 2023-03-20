@@ -314,9 +314,7 @@ class Client:
                 if question.get("answers"):
                     question_text = strip_tags(question["headings"][0]["heading"])
                     if question["family"] == "single_choice":
-                        for choice in question["answers"]["choices"]:
-                            col = " - ".join([question_text, choice["text"]])
-                            columns.append(col)
+                        columns.append(question_text)
                     elif question["family"] == "multiple_choice":
                         for key in question["answers"]:
                             if key == "other":
@@ -336,6 +334,7 @@ class Client:
                             for option in question["answers"][key]:
                                 col = " - ".join([question_text, option["text"]])
                                 columns.append(col)
+        columns = [clean_column(col) for col in columns]
         self.all_columns = columns
         return columns
 

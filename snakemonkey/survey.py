@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from tqdm import tqdm
 import requests
-from transformer import Transformer
-from utils import clean_column, strip_tags
+from snakemonkey.transformer import Transformer
+from snakemonkey.utils import clean_column, strip_tags
 
 _INVESTIGATE = [
     "date_created",
@@ -32,7 +32,7 @@ class Survey:
     questions: dict
     answers: dict
 
-    def get_survey_responses(self, page, status="completed"):
+    def get_survey_responses(self, page, status=None):
         """Gets a page of responses for Survey..
 
         Parameters
@@ -48,16 +48,19 @@ class Survey:
         """
         endpoint = f"surveys/{self.survey_id}/responses/bulk"
         params = {"page": page, "per_page": 100}
+
+        url = f"{self.base_url}/{endpoint}"
+
         if status:
             params["status"] = status
         result = requests.get(
-            url=f"{self.base_url}/{endpoint}",
+            url=url,
             params=params,
             headers=self.headers,
         )
         return result.json()
 
-    def get_all_survey_responses(self, status="completed"):
+    def get_all_survey_responses(self, status=None):
         """Gets all responses associated with Survey.
 
         Returns

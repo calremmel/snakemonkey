@@ -1,8 +1,29 @@
 from dataclasses import dataclass
 
 import requests
-from survey import Survey
-from utils import clean_column, strip_tags
+from snakemonkey.survey import Survey
+from snakemonkey.utils import clean_column, strip_tags
+from datetime import datetime
+
+from tabulate import tabulate
+
+
+def reformat_surveys(surveys):
+    parsed_survey_list = []
+    for s in surveys["data"]:
+        if "[" in s["nickname"]:
+            date_raw = s["nickname"].split("[")[1].replace("]", "")
+            dmy = date_raw.split(".")
+            dt = datetime(int("20" + dmy[2]), int(dmy[0]), int(dmy[1]))
+            iso_date = dt.strftime("%Y-%m-%d")
+            s["date"] = iso_date
+        else:
+            s["date"] = "NA"
+        if "title" in s.keys():
+            s.pop("title", None)
+        parsed_survey_list.append(s)
+    sorted_surveys = sorted(parsed_survey_list, key=lambda x: x["date"], reverse=True)
+    return sorted_surveys
 
 
 @dataclass
@@ -18,10 +39,15 @@ class Client:
             "Authorization": f"Bearer {self.token}",
         }
 
-    def get_surveys(self):
+    def get_surveys(self, fmt="records"):
         endpoint = "surveys"
         result = requests.get(url=f"{self.base_url}/{endpoint}", headers=self.headers)
-        return result.json()
+        result_dict = result.json()
+        if fmt == "records":
+            return result_dict
+        if fmt == "table":
+            surveys = reformat_surveys(result_dict)
+            print(tabulate(surveys, headers="keys"))
 
     def get_survey_details(self, survey_id):
         """Gets the details object for a single survey.

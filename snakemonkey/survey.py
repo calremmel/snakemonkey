@@ -11,6 +11,7 @@ _INVESTIGATE = [
     "date_created",
     "date_modified",
     "response_id",
+    "response_status",
     "In what ZIP code is your home located? (enter 5-digit ZIP code; for example, 00544 or 94305)",
     "What is your age?",
     "How many COVID-19 vaccine doses have you received?",
@@ -83,7 +84,8 @@ class Survey:
                 return
             current_page += 1
 
-    def parse_survey(self):
+    def parse_survey(self, squish=True):
+        duplicate_suffixes = {}
         transform = Transformer(self.questions, self.answers)
         responses = [response for page in self.responses for response in page["data"]]
         records = []
@@ -92,6 +94,7 @@ class Survey:
                 "response_id": response["id"],
                 "date_created": response["date_created"],
                 "date_modified": response["date_modified"],
+                'response_status': response["response_status"]
             }
             for page in response["pages"]:
                 if page.get("questions"):
@@ -99,15 +102,25 @@ class Survey:
                         question_id = question["id"]
                         family = self.families[question_id]
                         if family == "matrix":
-                            row |= transform.process_matrix(question)
+                            processed_question = transform.process_matrix(question)
                         if family == "multiple_choice":
-                            row |= transform.process_multiple_choice(question)
+                            processed_question = transform.process_multiple_choice(question)
                         if family == "single_choice":
-                            row |= transform.process_single_choice(question)
+                            processed_question = transform.process_single_choice(question)
                         if family == "open_ended":
-                            row |= transform.process_open_ended(question)
+                            processed_question = transform.process_open_ended(question)
                         if family == "datetime":
-                            row |= transform.process_datetime(question)
+                            processed_question = transform.process_datetime(question)
+                        for k, v in processed_question.items():
+                            if k not in row.keys():
+                                row[k] = v
+                            elif squish:
+                                if (row[k] is None) or (row[k] == ''):
+                                    row[k] = v
+                            else:
+                                duplicate_suffixes[k] = duplicate_suffixes.get(k, 1) + 1
+                                k_suffix = k + f"_{duplicate_suffixes[k]}"
+                                row[k_suffix] = v
             records.append(row)
         self.parsed_records = records
 
@@ -140,8 +153,10 @@ class Survey:
                                 col = " - ".join([question_text, option["text"]])
                                 columns.append(col)
         columns = [clean_column(col) for col in columns]
-        self.all_columns = _INVESTIGATE + columns
-        return columns
+        all_columns = list(set(_INVESTIGATE + columns))
+        start = sorted([c for c in all_columns if " " not in c])
+        end = sorted([c for c in all_columns if c not in start])
+        self.all_columns = start + end
 
     def to_csv(self, filename):
         if not self.all_columns:

@@ -8,3 +8,11 @@ snakemonkey/.env
 snakemonkey/__pycache__/
 
 snakemonkey/survey_data/
+
+.env
+
+snakemonkey/.ipynb_checkpoints/
+
+.python-version
+
+.ipynb_checkpoints/

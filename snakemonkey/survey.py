@@ -80,9 +80,14 @@ class Survey:
             print(f"Gathering page: {current_page}")
             responses = self.get_survey_responses(current_page, status)
             all_responses.append(responses)
-            if "next" not in responses["links"].keys():
-                self.responses = all_responses
-                return
+            try:
+                if "next" not in responses["links"].keys():
+                    self.responses = all_responses
+                    return
+            except KeyError as e:
+                print(e)
+                print(responses)
+                raise e
             current_page += 1
 
     def parse_survey(self, squish=True):

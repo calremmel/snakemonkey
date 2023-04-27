@@ -1,5 +1,6 @@
 import csv
 import json
+import time
 from dataclasses import dataclass
 
 from tqdm import tqdm
@@ -19,7 +20,7 @@ _INVESTIGATE = [
     "For how many days after getting sick will you continue to practice these behaviors?",
     "Optional: would you like to hear more from COVID Near You? Submit your phone number to receive text message reminders to update your health status, get information on testing facilities, or learn about important news in your community. Message and data rates may apply, reply HELP for help or STOP to cancel. Message frequency may vary, but expect 4/month. Read our Terms & Conditions and Privacy Policy.",
     "What was your highest recorded temperature, in degrees Fahrenheit?",
-    "About how many unused at-home COVID-19 tests do you currently have in your possession? (Please enter a numeric response)"
+    "About how many unused at-home COVID-19 tests do you currently have in your possession? (Please enter a numeric response)",
 ]
 
 
@@ -79,6 +80,13 @@ class Survey:
         while more_surveys:
             print(f"Gathering page: {current_page}")
             responses = self.get_survey_responses(current_page, status)
+            if "error" in responses.keys():
+                if responses["error"]["name"] == "Rate limit reached":
+                    time.sleep(1)
+                    continue
+                else:
+                    print(responses)
+                    raise ValueError("Invalid response.")
             all_responses.append(responses)
             try:
                 if "next" not in responses["links"].keys():
@@ -100,7 +108,7 @@ class Survey:
                 "response_id": response["id"],
                 "date_created": response["date_created"],
                 "date_modified": response["date_modified"],
-                'response_status': response["response_status"]
+                "response_status": response["response_status"],
             }
             for page in response["pages"]:
                 if page.get("questions"):
@@ -110,9 +118,13 @@ class Survey:
                         if family == "matrix":
                             processed_question = transform.process_matrix(question)
                         if family == "multiple_choice":
-                            processed_question = transform.process_multiple_choice(question)
+                            processed_question = transform.process_multiple_choice(
+                                question
+                            )
                         if family == "single_choice":
-                            processed_question = transform.process_single_choice(question)
+                            processed_question = transform.process_single_choice(
+                                question
+                            )
                         if family == "open_ended":
                             processed_question = transform.process_open_ended(question)
                         if family == "datetime":
@@ -121,7 +133,7 @@ class Survey:
                             if k not in row.keys():
                                 row[k] = v
                             elif squish:
-                                if (row[k] is None) or (row[k] == ''):
+                                if (row[k] is None) or (row[k] == ""):
                                     row[k] = v
                             else:
                                 duplicate_suffixes[k] = duplicate_suffixes.get(k, 1) + 1

@@ -82,6 +82,7 @@ class Survey:
             responses = self.get_survey_responses(current_page, status)
             if "error" in responses.keys():
                 if responses["error"]["name"] == "Rate limit reached":
+                    print("Waiting...")
                     time.sleep(1)
                     continue
                 else:
@@ -92,7 +93,7 @@ class Survey:
                 if "next" not in responses["links"].keys():
                     self.responses = all_responses
                     return
-            except KeyError as e:
+            except Exception as e:
                 print(e)
                 print(responses)
                 raise e

@@ -70,23 +70,28 @@ class Client:
         questions = {}
         answers = {}
         details = self.get_survey_details(survey_id)
-        for page in details["pages"]:
-            for question in page["questions"]:
-                questions[question["id"]] = strip_tags(
-                    question["headings"][0]["heading"]
-                )
-                families[question["id"]] = question["family"]
-                if question.get("answers"):
-                    if question["answers"].get("rows"):
-                        for row in question["answers"]["rows"]:
-                            answers[row["id"]] = row["text"].strip()
-                    if question["answers"].get("choices"):
-                        for choice in question["answers"]["choices"]:
-                            answers[choice["id"]] = choice["text"].strip()
-                    if question["answers"].get("other"):
-                        answers[question["answers"]["other"]["id"]] = question[
-                            "answers"
-                        ]["other"]["text"].strip()
+        try:
+            for page in details["pages"]:
+                for question in page["questions"]:
+                    questions[question["id"]] = strip_tags(
+                        question["headings"][0]["heading"]
+                    )
+                    families[question["id"]] = question["family"]
+                    if question.get("answers"):
+                        if question["answers"].get("rows"):
+                            for row in question["answers"]["rows"]:
+                                answers[row["id"]] = row["text"].strip()
+                        if question["answers"].get("choices"):
+                            for choice in question["answers"]["choices"]:
+                                answers[choice["id"]] = choice["text"].strip()
+                        if question["answers"].get("other"):
+                            answers[question["answers"]["other"]["id"]] = question[
+                                "answers"
+                            ]["other"]["text"].strip()
+        except Exception as e:
+            print(e)
+            print(details)
+            raise e
         cleaned_families = {k: clean_column(v) for k, v in families.items()}
         cleaned_questions = {k: clean_column(v) for k, v in questions.items()}
         cleaned_answers = {k: clean_column(v) for k, v in answers.items()}

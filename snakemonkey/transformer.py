@@ -6,6 +6,13 @@ class Transformer:
     questions: dict
     answers: dict
 
+    def arrange_text_field(self, question_id, answer):
+        question_text = " - ".join(
+            [self.questions[question_id], self.answers[answer["other_id"]]]
+        )
+        answer_text = answer["text"]
+        return question_text, answer_text
+
     def process_matrix(self, question):
         """Processes a question that is in matrix format.
 
@@ -53,10 +60,7 @@ class Transformer:
         question_id = question["id"]
         for answer in question["answers"]:
             if answer.get("other_id"):
-                question_text = " - ".join(
-                    [self.questions[question_id], self.answers[answer["other_id"]]]
-                )
-                answer_text = answer["text"]
+                question_text, answer_text = self.arrange_text_field(question_id, answer)
                 row[question_text] = answer_text
             else:
                 answer_text = self.answers[answer["choice_id"]]
@@ -81,15 +85,22 @@ class Transformer:
         row = {}
         question_id = question["id"]
         for answer in question["answers"]:
-            for value in answer.values():
-                if len(value) == 9 and all([char.isdigit() for char in value]):
-                    question_text = self.questions[question_id]
-                    answer_text = self.answers[value]
-                    row[question_text] = answer_text
-                else:
-                    question_text = self.questions[question_id]
-                    answer_text = value
-                    row[question_text] = answer_text
+            # other_id denotes something like (Please Specify)
+            if answer.get("other_id"):
+                question_text, answer_text = self.arrange_text_field(question_id, answer)
+                row[question_text] = answer_text
+            elif len(answer) > 1:
+                print(answer)
+                raise ValueError("Answer has too many keys.")
+            else:
+                for key, value in answer.items():
+                    if len(value) >= 9 and all([char.isdigit() for char in value]):
+                        question_text = self.questions[question_id]
+                        answer_text = self.answers[value]
+                        row[question_text] = answer_text
+                    else:
+                        raise ValueError(answer)
+                    
         return row
 
     def process_datetime(self, question):

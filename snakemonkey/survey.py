@@ -22,6 +22,7 @@ _INVESTIGATE = [
     "Optional: would you like to hear more from Outbreaks Near Me? Submit your phone number to receive text message reminders to update your health status, get information on testing facilities, or learn about important news in your community. Message and data rates may apply, reply HELP for help or STOP to cancel. Message frequency may vary, but expect 4/month. Read our Terms & Conditions and Privacy Policy.",
     "What was your highest recorded temperature, in degrees Fahrenheit?",
     "About how many unused at-home COVID-19 tests do you currently have in your possession? (Please enter a numeric response)",
+    'Which of the following is your MAIN source of health insurance coverage? - Other (please specify)'
 ]
 
 

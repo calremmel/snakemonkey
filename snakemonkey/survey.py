@@ -19,8 +19,10 @@ _INVESTIGATE = [
     "Over the past month, on an average day, about how many people (including family members) have you had close contact (within 6 feet) with?",
     "For how many days after getting sick will you continue to practice these behaviors?",
     "Optional: would you like to hear more from COVID Near You? Submit your phone number to receive text message reminders to update your health status, get information on testing facilities, or learn about important news in your community. Message and data rates may apply, reply HELP for help or STOP to cancel. Message frequency may vary, but expect 4/month. Read our Terms & Conditions and Privacy Policy.",
+    "Optional: would you like to hear more from Outbreaks Near Me? Submit your phone number to receive text message reminders to update your health status, get information on testing facilities, or learn about important news in your community. Message and data rates may apply, reply HELP for help or STOP to cancel. Message frequency may vary, but expect 4/month. Read our Terms & Conditions and Privacy Policy.",
     "What was your highest recorded temperature, in degrees Fahrenheit?",
     "About how many unused at-home COVID-19 tests do you currently have in your possession? (Please enter a numeric response)",
+    'Which of the following is your MAIN source of health insurance coverage? - Other (please specify)'
 ]
 
 
@@ -151,6 +153,10 @@ class Survey:
                 if question.get("answers"):
                     question_text = strip_tags(question["headings"][0]["heading"])
                     if question["family"] == "single_choice":
+                        if 'other' in question['answers'].keys():
+                            other_text = question['answers']['other']['text']
+                            other_question_text = " - ".join([question_text, other_text])
+                            columns.append(other_question_text)
                         columns.append(question_text)
                     elif question["family"] == "multiple_choice":
                         for key in question["answers"]:

@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "snakemonkey"
-version = "0.1.1"
+version = "0.2.0"
 description = ""
 authors = ["Christopher Remmel <40274075+calremmel@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 orjson = "^3.8.7"
 requests = "^2.28.2"
 python-dotenv = "^1.0.0"

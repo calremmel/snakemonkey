@@ -177,6 +177,11 @@ class Survey:
                             for option in question["answers"][key]:
                                 col = " - ".join([question_text, option["text"]])
                                 columns.append(col)
+                # to handle "What is their age?"
+                elif question["family"] == "open_ended":
+                    col = strip_tags(question["headings"][0]["heading"])
+                    columns.append(col)
+
         columns = [clean_column(col) for col in columns]
         all_columns = list(set(_INVESTIGATE + columns))
         start = sorted([c for c in all_columns if " " not in c])

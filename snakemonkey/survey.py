@@ -22,7 +22,7 @@ _INVESTIGATE = [
     "Optional: would you like to hear more from Outbreaks Near Me? Submit your phone number to receive text message reminders to update your health status, get information on testing facilities, or learn about important news in your community. Message and data rates may apply, reply HELP for help or STOP to cancel. Message frequency may vary, but expect 4/month. Read our Terms & Conditions and Privacy Policy.",
     "What was your highest recorded temperature, in degrees Fahrenheit?",
     "About how many unused at-home COVID-19 tests do you currently have in your possession? (Please enter a numeric response)",
-    'Which of the following is your MAIN source of health insurance coverage? - Other (please specify)'
+    "Which of the following is your MAIN source of health insurance coverage? - Other (please specify)",
 ]
 
 
@@ -102,6 +102,7 @@ class Survey:
             current_page += 1
 
     def parse_survey(self, squish=True):
+        columns = []
         duplicate_suffixes = {}
         transform = Transformer(self.questions, self.answers)
         responses = [response for page in self.responses for response in page["data"]]
@@ -135,6 +136,8 @@ class Survey:
                         for k, v in processed_question.items():
                             if k not in row.keys():
                                 row[k] = v
+                            if k not in columns:
+                                columns.append(k)
                             elif squish:
                                 if (row[k] is None) or (row[k] == ""):
                                     row[k] = v
@@ -143,54 +146,14 @@ class Survey:
                                 k_suffix = k + f"_{duplicate_suffixes[k]}"
                                 row[k_suffix] = v
             records.append(row)
-        self.parsed_records = records
-
-    def get_all_column_names(self):
-        columns = []
-        survey = self.details
-        for page in survey["pages"]:
-            for question in page["questions"]:
-                if question.get("answers"):
-                    question_text = strip_tags(question["headings"][0]["heading"])
-                    if question["family"] == "single_choice":
-                        if 'other' in question['answers'].keys():
-                            other_text = question['answers']['other']['text']
-                            other_question_text = " - ".join([question_text, other_text])
-                            columns.append(other_question_text)
-                        columns.append(question_text)
-                    elif question["family"] == "multiple_choice":
-                        for key in question["answers"]:
-                            if key == "other":
-                                option = question["answers"][key]
-                                col = " - ".join([question_text, option["text"]])
-                                columns.append(col)
-                            else:
-                                for option in question["answers"][key]:
-                                    col = " - ".join([question_text, option["text"]])
-                                    columns.append(col)
-                    elif question["family"] == "matrix":
-                        for row in question["answers"]["rows"]:
-                            col = " - ".join([question_text, row["text"]])
-                            columns.append(col)
-                    else:
-                        for key in question["answers"].keys():
-                            for option in question["answers"][key]:
-                                col = " - ".join([question_text, option["text"]])
-                                columns.append(col)
-                # to handle "What is their age?"
-                elif question["family"] == "open_ended":
-                    col = strip_tags(question["headings"][0]["heading"])
-                    columns.append(col)
-
         columns = [clean_column(col) for col in columns]
         all_columns = list(set(_INVESTIGATE + columns))
         start = sorted([c for c in all_columns if " " not in c])
         end = sorted([c for c in all_columns if c not in start])
         self.all_columns = start + end
+        self.parsed_records = records
 
     def to_csv(self, filename):
-        if not self.all_columns:
-            self.get_all_column_names()
         with open(filename, "w") as f:
             writer = csv.DictWriter(f, fieldnames=self.all_columns)
             writer.writeheader()

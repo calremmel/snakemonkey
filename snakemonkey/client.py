@@ -71,11 +71,19 @@ class Client:
         answers = {}
         details = self.get_survey_details(survey_id)
         try:
+            all_questions = {}
             for page in details["pages"]:
                 for question in page["questions"]:
-                    questions[question["id"]] = strip_tags(
+                    question_text = strip_tags(
                         question["headings"][0]["heading"]
                     )
+                    household_pronouns = ["they", "their", "them"]
+                    if (question_text in all_questions) and (any(pronoun in question_text.lower() for pronoun in household_pronouns)):
+                        count = all_questions.get(question_text) + 1
+                        questions[question["id"]] = question_text + f" {count}"
+                    else:
+                        questions[question["id"]] = question_text
+                    all_questions[question_text] = all_questions.get(question_text, 0) + 1
                     families[question["id"]] = question["family"]
                     if question.get("answers"):
                         if question["answers"].get("rows"):

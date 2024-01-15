@@ -153,6 +153,51 @@ class Survey:
         self.all_columns = start + end
         self.parsed_records = records
 
+    def get_all_column_names(self):
+        columns = []
+        survey = self.details
+        for page in survey["pages"]:
+            for question in page["questions"]:
+                if question.get("answers"):
+                    question_text = strip_tags(question["headings"][0]["heading"])
+                    if question["family"] == "single_choice":
+                        if "other" in question["answers"].keys():
+                            other_text = question["answers"]["other"]["text"]
+                            other_question_text = " - ".join(
+                                [question_text, other_text]
+                            )
+                            columns.append(other_question_text)
+                        columns.append(question_text)
+                    elif question["family"] == "multiple_choice":
+                        for key in question["answers"]:
+                            if key == "other":
+                                option = question["answers"][key]
+                                col = " - ".join([question_text, option["text"]])
+                                columns.append(col)
+                            else:
+                                for option in question["answers"][key]:
+                                    col = " - ".join([question_text, option["text"]])
+                                    columns.append(col)
+                    elif question["family"] == "matrix":
+                        for row in question["answers"]["rows"]:
+                            col = " - ".join([question_text, row["text"]])
+                            columns.append(col)
+                    else:
+                        for key in question["answers"].keys():
+                            for option in question["answers"][key]:
+                                col = " - ".join([question_text, option["text"]])
+                                columns.append(col)
+                # to handle "What is their age?"
+                elif question["family"] == "open_ended":
+                    col = strip_tags(question["headings"][0]["heading"])
+                    columns.append(col)
+
+        columns = [clean_column(col) for col in columns]
+        all_columns = list(set(_INVESTIGATE + columns))
+        start = sorted([c for c in all_columns if " " not in c])
+        end = sorted([c for c in all_columns if c not in start])
+        self.all_columns = start + end
+
     def to_csv(self, filename):
         with open(filename, "w") as f:
             writer = csv.DictWriter(f, fieldnames=self.all_columns)
